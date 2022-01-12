@@ -36,7 +36,6 @@ function getUsers(callback) {
     if(err) {
       return console.error(err);
     }
-    console.log(users)
     callback(users);
   })
 }
