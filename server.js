@@ -45,14 +45,13 @@ function getUsers(callback) {
 app.post('/api/users', (req, res) => {
   const name = req.body.username;
   addUser(name, (userName, userId) => {
-    res.json({name: userName, _id: userId});
+    res.json({username: userName, _id: userId});
   });
 });
 
 app.get('/api/users', (req, res) => {
   getUsers((users) => {
-    res.json({users: users.map(function(user) {return{name: user.name, _id: user.id}})
-    });
+    res.json(users.map(function(user) {return{username: user.name, _id: user.id}}));
   });
 });
 
