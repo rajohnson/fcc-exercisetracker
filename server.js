@@ -40,6 +40,38 @@ function getUsers(callback) {
   })
 }
 
+const exerciseSchema = new mongoose.Schema({
+  user: String,
+  description: String,
+  duration: Number,
+  date: String
+});
+
+const Exercise = mongoose.model('Exercise', exerciseSchema);
+
+function addExercise(id, desc, dur, date, callback, errcallback) {
+  User.findOne({_id: id}, (err, user) => {
+    if(err) {
+      console.error(err);
+      return errcallback();
+    }
+    if(!user) {
+      console.error('No user found', id)
+      return errcallback();
+    }
+    console.log('user: ', user)
+    Exercise.create({user: id, description: desc, duration: dur, date: date}, (err, ex) => {
+      if(err) {
+        console.error(err);
+        return errcallback();
+      }
+      callback(ex.user, user.name, ex.description, ex.duration, ex.date);
+    });
+  });
+}
+
+
+
 // endpoints
 app.post('/api/users', (req, res) => {
   const name = req.body.username;
@@ -54,6 +86,21 @@ app.get('/api/users', (req, res) => {
   });
 });
 
+app.post('/api/users/:_id/exercises', (req, res) => {
+  const id = req.body[':_id'];
+  const description = req.body.description;
+  const duration = req.body.duration;
+  let date = new Date(req.body.date).toDateString();
+  if(date === "Invalid Date") {
+    date = new Date().toDateString();
+  }
+  console.log(req.body)
+  addExercise(id, description, duration, date, (userId, userName, exDescription, exDuration, exDate) => {
+    res.json({_id: userId, username: userName, description: exDescription, duration: exDuration, date: exDate});
+  }, ()=> {
+    res.send('error')
+  });
+});
 
 // listen 
 const listener = app.listen(process.env.PORT || 3000, () => {
