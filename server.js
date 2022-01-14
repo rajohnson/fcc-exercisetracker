@@ -59,7 +59,6 @@ function addExercise(id, desc, dur, date, callback, errcallback) {
       console.error('No user found', id)
       return errcallback();
     }
-    console.log('user: ', user)
     Exercise.create({user: id, description: desc, duration: dur, date: date}, (err, ex) => {
       if(err) {
         console.error(err);
@@ -87,16 +86,21 @@ app.get('/api/users', (req, res) => {
 });
 
 app.post('/api/users/:_id/exercises', (req, res) => {
-  const id = req.body[':_id'];
+  let sendDate = true;
+  const id = req.params['_id'];
   const description = req.body.description;
-  const duration = req.body.duration;
+  const duration = Number(req.body.duration);
   let date = new Date(req.body.date).toDateString();
   if(date === "Invalid Date") {
     date = new Date().toDateString();
+    sendDate = false;
   }
-  console.log(req.body)
   addExercise(id, description, duration, date, (userId, userName, exDescription, exDuration, exDate) => {
-    res.json({_id: userId, username: userName, description: exDescription, duration: exDuration, date: exDate});
+    if(sendDate) {
+      res.json({username: userName, description: exDescription, duration: exDuration, date: exDate, _id: userId});
+    } else {
+      res.json({username: userName, description: exDescription, duration: exDuration, _id: userId});
+    }
   }, ()=> {
     res.send('error')
   });
