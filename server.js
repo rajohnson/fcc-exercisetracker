@@ -69,6 +69,32 @@ function addExercise(id, desc, dur, date, callback, errcallback) {
   });
 }
 
+function getExcercises(id, start, end, limit, callback) {
+  console.log('start getex')
+  User.findOne({_id: id}, (err, user) => {
+    if(err) {
+      return console.error(err);
+    }
+    console.log('user is', user)
+    let exQuery = Exercise.find({user: id})
+    if(start) {
+      exQuery = exQuery.where('date').gt(start)
+    }
+    if(end) {
+      exQuery = exQuery.where('date').lt(end)
+    }
+    if(limit) {
+      exQuery = exQuery.limit(limit)
+    }
+    exQuery.exec((err, logs) => {
+      if(err) {
+        console.error(err)
+      }
+      console.log('got list', logs)
+      callback(user.name, logs);
+    });
+  });
+}
 
 
 // endpoints
@@ -103,6 +129,22 @@ app.post('/api/users/:_id/exercises', (req, res) => {
     }
   }, ()=> {
     res.send('error')
+  });
+});
+
+app.get('/api/users/:_id/logs', (req, res) => {
+  const id = req.params['_id'];
+  const start = req.query.from;
+  const end = req.query.to;
+  const limit = req.query.limit;
+  console.log(id, start, end, limit)
+  getExcercises(id, start, end, limit, (name, logs) => {
+    res.send({
+      username: name,
+      count: logs.length,
+      _id: id, 
+      log: logs.map(function(log) {return {description: log.description, duration: log.duration, date: log.date}})
+    });
   });
 });
 
