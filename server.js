@@ -44,7 +44,7 @@ const exerciseSchema = new mongoose.Schema({
   user: String,
   description: String,
   duration: Number,
-  date: String
+  date: Date
 });
 
 const Exercise = mongoose.model('Exercise', exerciseSchema);
@@ -70,17 +70,15 @@ function addExercise(id, desc, dur, date, callback, errcallback) {
 }
 
 function getExcercises(id, start, end, limit, callback) {
-  console.log('start getex')
   User.findOne({_id: id}, (err, user) => {
     if(err) {
       return console.error(err);
     }
-    console.log('user is', user)
     let exQuery = Exercise.find({user: id})
-    if(start) {
+    if(start.toDateString() !== 'Invalid Date') {
       exQuery = exQuery.where('date').gt(start)
     }
-    if(end) {
+    if(end.toDateString() !== 'Invalid Date') {
       exQuery = exQuery.where('date').lt(end)
     }
     if(limit) {
@@ -90,7 +88,6 @@ function getExcercises(id, start, end, limit, callback) {
       if(err) {
         console.error(err)
       }
-      console.log('got list', logs)
       callback(user.name, logs);
     });
   });
@@ -112,21 +109,16 @@ app.get('/api/users', (req, res) => {
 });
 
 app.post('/api/users/:_id/exercises', (req, res) => {
-  let sendDate = true;
   const id = req.params['_id'];
   const description = req.body.description;
   const duration = Number(req.body.duration);
-  let date = new Date(req.body.date).toDateString();
-  if(date === "Invalid Date") {
-    date = new Date().toDateString();
-    sendDate = false;
+  let date = new Date(req.body.date);
+  if(date.toDateString() === 'Invalid Date') {
+    date = new Date();
   }
+  console.log(date)
   addExercise(id, description, duration, date, (userId, userName, exDescription, exDuration, exDate) => {
-    if(sendDate) {
-      res.json({username: userName, description: exDescription, duration: exDuration, date: exDate, _id: userId});
-    } else {
-      res.json({username: userName, description: exDescription, duration: exDuration, _id: userId});
-    }
+    res.json({username: userName, description: exDescription, duration: exDuration, date: exDate.toDateString(), _id: userId});
   }, ()=> {
     res.send('error')
   });
@@ -134,8 +126,8 @@ app.post('/api/users/:_id/exercises', (req, res) => {
 
 app.get('/api/users/:_id/logs', (req, res) => {
   const id = req.params['_id'];
-  const start = req.query.from;
-  const end = req.query.to;
+  const start = new Date(req.query.from);
+  const end = new Date(req.query.to);
   const limit = req.query.limit;
   console.log(id, start, end, limit)
   getExcercises(id, start, end, limit, (name, logs) => {
@@ -143,7 +135,7 @@ app.get('/api/users/:_id/logs', (req, res) => {
       username: name,
       count: logs.length,
       _id: id, 
-      log: logs.map(function(log) {return {description: log.description, duration: log.duration, date: log.date}})
+      log: logs.map(function(log) {return {description: log.description, duration: log.duration, date: log.date.toDateString()}})
     });
   });
 });
